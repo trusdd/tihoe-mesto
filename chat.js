@@ -10,7 +10,6 @@
   let isChatActive = false;
   let isWaitingForVolunteer = true;
   let mockVolunteerTimer = null;
-  let messageQueue = [];
 
   const VOLUNTEER_REPLIES = [
     'Я здесь. Ты не один.',
@@ -52,7 +51,7 @@
   function updateStatus(text, isError = false) {
     chatStatusText.textContent = text;
     if (isError) {
-      chatStatusText.style.color = '#e08484';
+      chatStatusText.style.color = '#b88878';
     } else {
       chatStatusText.style.color = '';
     }
@@ -62,8 +61,7 @@
     const msgDiv = document.createElement('div');
     msgDiv.className = 'message-system';
     if (isError) {
-      msgDiv.style.background = 'rgba(224, 124, 44, 0.08)';
-      msgDiv.style.borderLeft = '2px solid #e07c2c';
+      msgDiv.style.background = 'rgba(156, 106, 106, 0.15)';
     }
     msgDiv.innerHTML = `<span class="msg-icon">${isError ? '⚠️' : '🤝'}</span><span>${escapeHtml(text)}</span><span class="msg-time">${formatTime()}</span>`;
     chatMessages.appendChild(msgDiv);
@@ -290,7 +288,6 @@
     isChatActive = false;
     isWaitingForVolunteer = false;
     stopMockVolunteer();
-    messageQueue = [];
     clearSessionFromStorage();
 
     if (redirectToHome) {
@@ -305,7 +302,6 @@
     }
 
     stopMockVolunteer();
-    messageQueue = [];
     addSystemMessage(
       '🗑️ Переписка удалена. Ты вышел в любой момент — следов нет.',
     );
@@ -376,4 +372,45 @@
   window.addEventListener('beforeunload', handleBeforeUnload);
 
   initChat();
+})();
+
+// Переключение темы для страницы чата
+(function () {
+  const themeToggle = document.getElementById('themeToggleChat');
+  const themeIcon = themeToggle?.querySelector('.theme-icon');
+  const themeText = themeToggle?.querySelector('.theme-text');
+
+  function getSavedTheme() {
+    return localStorage.getItem('theme') || 'light';
+  }
+
+  function setTheme(theme) {
+    document.body.classList.remove('light-theme', 'dark-theme');
+    document.body.classList.add(`${theme}-theme`);
+    localStorage.setItem('theme', theme);
+
+    if (themeIcon && themeText) {
+      if (theme === 'dark') {
+        themeIcon.textContent = '☀️';
+        themeText.textContent = 'Светлая';
+      } else {
+        themeIcon.textContent = '🌙';
+        themeText.textContent = 'Тёмная';
+      }
+    }
+  }
+
+  function toggleTheme() {
+    const currentTheme = document.body.classList.contains('dark-theme')
+      ? 'dark'
+      : 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+  }
+
+  if (themeToggle) {
+    const savedTheme = getSavedTheme();
+    setTheme(savedTheme);
+    themeToggle.addEventListener('click', toggleTheme);
+  }
 })();

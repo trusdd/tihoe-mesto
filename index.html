@@ -11,7 +11,7 @@
     rel="stylesheet">
 </head>
 
-<body>
+<body class="light-theme">
   <div class="app">
     <div class="bg-gradient"></div>
     <div class="bg-blur"></div>
@@ -25,9 +25,15 @@
         </div>
         <span class="logo-text">тихое место</span>
       </div>
-      <div class="trust-badge">
-        <span class="badge-dot"></span>
-        <span>не госпроект</span>
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <button id="themeToggle" class="theme-toggle">
+          <span class="theme-icon">🌙</span>
+          <span class="theme-text">Тёмная</span>
+        </button>
+        <div class="trust-badge">
+          <span class="badge-dot"></span>
+          <span>не госпроект</span>
+        </div>
       </div>
     </header>
 

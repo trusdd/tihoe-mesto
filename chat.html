@@ -11,7 +11,7 @@
     rel="stylesheet">
 </head>
 
-<body class="chat-page">
+<body class="light-theme chat-page">
   <div class="chat-app">
     <div class="chat-bg-gradient"></div>
     <div class="chat-bg-blur"></div>
@@ -23,9 +23,15 @@
         </svg>
         <span>Выйти</span>
       </a>
-      <div class="chat-header-info">
-        <div class="status-dot pulse"></div>
-        <span class="chat-status-text" id="chatStatusText">Подключение...</span>
+      <div style="display: flex; align-items: center; gap: 0.8rem;">
+        <button id="themeToggleChat" class="theme-toggle">
+          <span class="theme-icon">🌙</span>
+          <span class="theme-text">Тёмная</span>
+        </button>
+        <div class="chat-header-info">
+          <div class="status-dot pulse"></div>
+          <span class="chat-status-text" id="chatStatusText">Подключение...</span>
+        </div>
       </div>
       <button id="panicBtn" class="chat-panic-header">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
