@@ -49,11 +49,13 @@
   }
 
   function updateStatus(text, isError = false) {
-    chatStatusText.textContent = text;
-    if (isError) {
-      chatStatusText.style.color = '#b88878';
-    } else {
-      chatStatusText.style.color = '';
+    if (chatStatusText) {
+      chatStatusText.textContent = text;
+      if (isError) {
+        chatStatusText.style.color = '#b88878';
+      } else {
+        chatStatusText.style.color = '';
+      }
     }
   }
 
@@ -374,7 +376,7 @@
   initChat();
 })();
 
-// Переключение темы для страницы чата
+// ========== ПЕРЕКЛЮЧЕНИЕ ТЕМЫ ДЛЯ СТРАНИЦЫ ЧАТА ==========
 (function () {
   const themeToggle = document.getElementById('themeToggleChat');
   const themeIcon = themeToggle?.querySelector('.theme-icon');
@@ -413,4 +415,88 @@
     setTheme(savedTheme);
     themeToggle.addEventListener('click', toggleTheme);
   }
+})();
+
+// ========== ЖАЛОБА НА ВОЛОНТЕРА ==========
+(function () {
+  const complainBtn = document.getElementById('complainBtn');
+
+  function openComplainModal() {
+    console.log('openComplainModal called');
+
+    if (!window.isChatActive) {
+      const chatActiveFlag = document.querySelector('.user-message') !== null;
+      if (!chatActiveFlag) {
+        alert('Жалоба доступна только во время активного чата.');
+        return;
+      }
+    }
+
+    const modal = document.getElementById('complainModal');
+    if (!modal) {
+      console.error('Modal not found!');
+      return;
+    }
+
+    modal.classList.remove('hidden');
+    console.log('Modal opened');
+  }
+
+  if (complainBtn) {
+    console.log('Complain button found');
+    complainBtn.addEventListener('click', openComplainModal);
+  } else {
+    console.error('Complain button NOT found');
+  }
+
+  const closeComplainModal = document.getElementById('closeComplainModal');
+  const cancelComplainBtn = document.getElementById('cancelComplainBtn');
+  const submitComplainBtn = document.getElementById('submitComplainBtn');
+  const complainDetails = document.getElementById('complainDetails');
+
+  function closeModal() {
+    const modal = document.getElementById('complainModal');
+    if (modal) modal.classList.add('hidden');
+    const radioInputs = document.querySelectorAll(
+      'input[name="complainReason"]',
+    );
+    radioInputs.forEach((radio) => (radio.checked = false));
+    if (complainDetails) complainDetails.value = '';
+  }
+
+  function submitComplain() {
+    const radioInputs = document.querySelectorAll(
+      'input[name="complainReason"]',
+    );
+    let reason = null;
+    for (let radio of radioInputs) {
+      if (radio.checked) {
+        reason = radio.value;
+        break;
+      }
+    }
+
+    if (!reason) {
+      alert('Пожалуйста, выберите причину жалобы.');
+      return;
+    }
+
+    const details = complainDetails ? complainDetails.value.trim() : '';
+
+    const systemMsgDiv = document.createElement('div');
+    systemMsgDiv.className = 'message-system';
+    systemMsgDiv.innerHTML = `<span class="msg-icon">📢</span><span>Спасибо за жалобу. Мы рассмотрим её в течение 24 часов. Волонтёр не узнает о ней.</span><span class="msg-time">${new Date().toLocaleTimeString().slice(0, 5)}</span>`;
+    document.getElementById('chatMessages').appendChild(systemMsgDiv);
+
+    console.log('Complain submitted:', { reason, details });
+
+    closeModal();
+  }
+
+  if (closeComplainModal)
+    closeComplainModal.addEventListener('click', closeModal);
+  if (cancelComplainBtn)
+    cancelComplainBtn.addEventListener('click', closeModal);
+  if (submitComplainBtn)
+    submitComplainBtn.addEventListener('click', submitComplain);
 })();

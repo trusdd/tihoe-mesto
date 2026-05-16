@@ -33,14 +33,23 @@
           <span class="chat-status-text" id="chatStatusText">Подключение...</span>
         </div>
       </div>
-      <button id="panicBtn" class="chat-panic-header">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-        <span>Стереть всё</span>
-      </button>
+      <div style="display: flex; gap: 0.6rem;">
+        <button id="complainBtn" class="chat-complain-header" title="Пожаловаться на волонтёра">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            <line x1="12" y1="22" x2="12" y2="17" />
+          </svg>
+          <span>Пожаловаться</span>
+        </button>
+        <button id="panicBtn" class="chat-panic-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>Стереть всё</span>
+        </button>
+      </div>
     </div>
 
     <div id="chatMessages" class="chat-messages-page">
@@ -68,6 +77,42 @@
       </div>
       <div class="chat-note">
         <span>🔒 Анонимно · 💬 Не хранится дольше 24 часов</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="complainModal" class="modal-complain hidden">
+    <div class="modal-complain-overlay"></div>
+    <div class="modal-complain-container">
+      <div class="modal-complain-header">
+        <span>📢 Пожаловаться на волонтёра</span>
+        <button id="closeComplainModal" class="close-complain-btn">✕</button>
+      </div>
+      <div class="modal-complain-body">
+        <p class="complain-warning">Ваша жалоба анонимна. Мы рассмотрим её в течение 24 часов.</p>
+        <div class="complain-reasons">
+          <label class="complain-option">
+            <input type="radio" name="complainReason" value="грубость">
+            <span>Грубость или оскорбления</span>
+          </label>
+          <label class="complain-option">
+            <input type="radio" name="complainReason" value="непрофессионализм">
+            <span>Неподобающее поведение</span>
+          </label>
+          <label class="complain-option">
+            <input type="radio" name="complainReason" value="запрос личных данных">
+            <span>Запрашивает личные данные</span>
+          </label>
+          <label class="complain-option">
+            <input type="radio" name="complainReason" value="другое">
+            <span>Другое</span>
+          </label>
+        </div>
+        <textarea id="complainDetails" placeholder="Опишите, что произошло (необязательно)..." rows="3"></textarea>
+        <div class="modal-complain-buttons">
+          <button id="cancelComplainBtn" class="complain-cancel-btn">Отмена</button>
+          <button id="submitComplainBtn" class="complain-submit-btn">Отправить жалобу</button>
+        </div>
       </div>
     </div>
   </div>
