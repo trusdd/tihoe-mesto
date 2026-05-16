@@ -1,16 +1,23 @@
+// ==================== ОСНОВНАЯ ЛОГИКА ЧАТА ====================
+// АВТОЗАПУСКАЮЩАЯСЯ ФУНКЦИЯ ДЛЯ ИЗОЛЯЦИИ КОДА
 (function () {
-  const chatMessages = document.getElementById('chatMessages');
-  const chatInput = document.getElementById('chatInput');
-  const sendBtn = document.getElementById('sendChatBtn');
-  const panicBtn = document.getElementById('panicBtn');
-  const chatStatusText = document.getElementById('chatStatusText');
-  const waitingMessage = document.getElementById('waitingMessage');
+  // ==================== ПОЛУЧЕНИЕ DOM ЭЛЕМЕНТОВ ====================
+  const chatMessages = document.getElementById('chatMessages'); // КОНТЕЙНЕР СООБЩЕНИЙ
+  const chatInput = document.getElementById('chatInput'); // ПОЛЕ ВВОДА ТЕКСТА
+  const sendBtn = document.getElementById('sendChatBtn'); // КНОПКА ОТПРАВКИ
+  const panicBtn = document.getElementById('panicBtn'); // КНОПКА "СТЕРЕТЬ ВСЕ"
+  const chatStatusText = document.getElementById('chatStatusText'); // ТЕКСТ СТАТУСА (ПОДКЛЮЧЕНИЕ)
+  const waitingMessage = document.getElementById('waitingMessage'); // СООБЩЕНИЕ О ПОИСКЕ ВОЛОНТЕРА
 
-  let sessionId = null;
-  let isChatActive = false;
-  let isWaitingForVolunteer = true;
-  let mockVolunteerTimer = null;
+  // ==================== ПЕРЕМЕННЫЕ СОСТОЯНИЯ ====================
+  let sessionId = null; // УНИКАЛЬНЫЙ ID СЕССИИ ЧАТА
+  let isChatActive = false; // АКТИВЕН ЛИ ЧАТ
+  let isWaitingForVolunteer = true; // ОЖИДАНИЕ ВОЛОНТЕРА
+  let mockVolunteerTimer = null; // ТАЙМЕР ОТВЕТОВ МОК-ВОЛОНТЕРА
+  let originalTitle = document.title; // ОРИГИНАЛЬНЫЙ ЗАГОЛОВОК ВКЛАДКИ
+  let unreadCount = 0; // СЧЕТЧИК НЕПРОЧИТАННЫХ СООБЩЕНИЙ
 
+  // ==================== БАЗА ОТВЕТОВ ВОЛОНТЕРА ====================
   const VOLUNTEER_REPLIES = [
     'Я здесь. Ты не один.',
     'Расскажи, что чувствуешь. Я слушаю внимательно.',
@@ -24,21 +31,27 @@
     'Ты справляешься. Даже если кажется, что нет — ты уже сделал шаг.',
   ];
 
+  // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+
+  // ГЕНЕРАЦИЯ СЛУЧАЙНОГО ЧИСЛА В ДИАПАЗОНЕ
   function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
+  // ФОРМАТИРОВАНИЕ ТЕКУЩЕГО ВРЕМЕНИ (ЧЧ:ММ)
   function formatTime() {
     const now = new Date();
     return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
   }
 
+  // ЗАЩИТА ОТ XSS АТАК (ЭСКЕЙП HTML СИМВОЛОВ)
   function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
   }
 
+  // ПЛАВНАЯ ПРОКРУТКА ЧАТА ВНИЗ
   function smoothScrollToBottom() {
     setTimeout(() => {
       chatMessages.scrollTo({
@@ -48,6 +61,7 @@
     }, 50);
   }
 
+  // ОБНОВЛЕНИЕ СТАТУСА В ХЕДЕРЕ ЧАТА
   function updateStatus(text, isError = false) {
     if (chatStatusText) {
       chatStatusText.textContent = text;
@@ -59,6 +73,23 @@
     }
   }
 
+  // ==================== УВЕДОМЛЕНИЯ (СМЕНА ЗАГОЛОВКА ВКЛАДКИ) ====================
+  function updateTitleNotification() {
+    if (unreadCount > 0) {
+      document.title = `💬 (${unreadCount}) ${originalTitle}`;
+    } else {
+      document.title = originalTitle;
+    }
+  }
+
+  function resetTitleNotification() {
+    unreadCount = 0;
+    updateTitleNotification();
+  }
+
+  // ==================== ДОБАВЛЕНИЕ СООБЩЕНИЙ В ЧАТ ====================
+
+  // СИСТЕМНОЕ СООБЩЕНИЕ (СЕРАЯ ПЛАШКА)
   function addSystemMessage(text, isError = false) {
     const msgDiv = document.createElement('div');
     msgDiv.className = 'message-system';
@@ -71,6 +102,7 @@
     return msgDiv;
   }
 
+  // ИНДИКАТОР "ВОЛОНТЕР ПЕЧАТАЕТ..."
   function addTypingIndicator() {
     const typingDiv = document.createElement('div');
     typingDiv.className = 'message-system typing-indicator';
@@ -79,7 +111,7 @@
           <div class="typing-dots">
               <span></span><span></span><span></span>
           </div>
-          <span>Волонтёр печатает...</span>
+          <span>Волонтер печатает...</span>
       `;
     chatMessages.appendChild(typingDiv);
     smoothScrollToBottom();
@@ -91,15 +123,21 @@
     if (indicator) indicator.remove();
   }
 
+  // СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ (СПРАВА, С ХВОСТИКОМ)
   function addUserMessage(text) {
     const msgDiv = document.createElement('div');
     msgDiv.className = 'user-message';
     msgDiv.innerHTML = `<div class="message-text">${escapeHtml(text)}</div><div class="message-time">${formatTime()}</div>`;
     chatMessages.appendChild(msgDiv);
     smoothScrollToBottom();
+    resetTitleNotification(); // СБРАСЫВАЕМ УВЕДОМЛЕНИЕ ПРИ АКТИВНОСТИ
   }
 
+  // СООБЩЕНИЕ ВОЛОНТЕРА (СЛЕВА, С ХВОСТИКОМ)
   function addVolunteerMessage(text, withDelay = false) {
+    unreadCount++;
+    updateTitleNotification();
+
     if (withDelay) {
       addTypingIndicator();
       setTimeout(() => {
@@ -119,12 +157,14 @@
     }
   }
 
+  // ОЧИСТКА ВСЕХ СООБЩЕНИЙ В ЧАТЕ
   function clearChatMessages() {
     while (chatMessages.firstChild) {
       chatMessages.removeChild(chatMessages.firstChild);
     }
   }
 
+  // ==================== УПРАВЛЕНИЕ ПОЛЕМ ВВОДА ====================
   function enableChatInput(enabled) {
     chatInput.disabled = !enabled;
     sendBtn.disabled = !enabled;
@@ -133,11 +173,12 @@
       chatInput.placeholder = 'Напиши что-нибудь...';
     } else {
       chatInput.placeholder = isWaitingForVolunteer
-        ? 'Ищем волонтёра...'
+        ? 'Ищем волонтера...'
         : 'Чат недоступен';
     }
   }
 
+  // ==================== УПРАВЛЕНИЕ МОК-ВОЛОНТЕРОМ ====================
   function stopMockVolunteer() {
     if (mockVolunteerTimer) {
       clearTimeout(mockVolunteerTimer);
@@ -146,6 +187,7 @@
     removeTypingIndicator();
   }
 
+  // ПЛАНИРОВЩИК СЛЕДУЮЩЕГО ОТВЕТА ВОЛОНТЕРА (РАНДОМНАЯ ЗАДЕРЖКА)
   function scheduleNextReply() {
     if (!isChatActive || isWaitingForVolunteer) return;
     stopMockVolunteer();
@@ -168,6 +210,7 @@
     scheduleNextReply();
   }
 
+  // ==================== РАБОТА С ХРАНИЛИЩЕМ СЕССИЙ ====================
   function saveSessionToStorage() {
     if (sessionId) {
       sessionStorage.setItem('chatSessionId', sessionId);
@@ -180,6 +223,7 @@
     sessionStorage.removeItem('chatSessionTime');
   }
 
+  // ==================== ИМИТАЦИЯ ЗАПРОСОВ К БЭКЕНДУ ====================
   function simulateBackendRequest(endpoint, data, timeout = 5000) {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(
@@ -203,10 +247,11 @@
     });
   }
 
+  // ==================== ПОИСК ВОЛОНТЕРА ====================
   async function findVolunteer() {
     isWaitingForVolunteer = true;
     enableChatInput(false);
-    updateStatus('Поиск волонтёра...');
+    updateStatus('Поиск волонтера...');
 
     let attempts = 0;
     const maxAttempts = 3;
@@ -222,8 +267,8 @@
           saveSessionToStorage();
           isWaitingForVolunteer = false;
           if (waitingMessage) waitingMessage.remove();
-          addSystemMessage('✅ Волонтёр рядом. Можешь писать.');
-          updateStatus('Волонтёр онлайн');
+          addSystemMessage('✅ Волонтер рядом. Можешь писать.');
+          updateStatus('Волонтер онлайн');
           enableChatInput(true);
           startMockVolunteer();
           return true;
@@ -242,7 +287,7 @@
 
     if (isChatActive) {
       addSystemMessage(
-        'Не удалось найти волонтёра. Попробуй позже или обнови страницу.',
+        'Не удалось найти волонтера. Попробуй позже или обнови страницу.',
         true,
       );
       updateStatus('Недоступно', true);
@@ -251,10 +296,11 @@
     return false;
   }
 
+  // ==================== ИНИЦИАЛИЗАЦИЯ ЧАТА ====================
   async function initChat() {
     clearChatMessages();
     addSystemMessage(
-      '🤝 Ты в безопасном пространстве. Волонтёр не знает, кто ты.',
+      '🤝 Ты в безопасном пространстве. Волонтер не знает, кто ты.',
     );
 
     const waitingMsgDiv = document.createElement('div');
@@ -264,13 +310,14 @@
           <div class="typing-dots">
               <span></span><span></span><span></span>
           </div>
-          <span>Ищем свободного волонтёра...</span>
+          <span>Ищем свободного волонтера...</span>
       `;
     chatMessages.appendChild(waitingMsgDiv);
 
     isChatActive = true;
     isWaitingForVolunteer = true;
 
+    // ПРОВЕРКА НА ВОССТАНОВЛЕНИЕ СЕССИИ (ЕСЛИ СТРАНИЦА ОБНОВИЛАСЬ)
     const savedSession = sessionStorage.getItem('chatSessionId');
     const savedTime = sessionStorage.getItem('chatSessionTime');
 
@@ -286,17 +333,20 @@
     await findVolunteer();
   }
 
+  // ==================== ЗАВЕРШЕНИЕ СЕССИИ ====================
   function endSession(redirectToHome = true) {
     isChatActive = false;
     isWaitingForVolunteer = false;
     stopMockVolunteer();
     clearSessionFromStorage();
+    resetTitleNotification();
 
     if (redirectToHome) {
       window.location.href = 'index.html';
     }
   }
 
+  // ==================== КНОПКА "СТЕРЕТЬ ВСЕ" ====================
   function panicDeleteSession() {
     if (!isChatActive) {
       window.location.href = 'index.html';
@@ -319,6 +369,7 @@
     }, 2000);
   }
 
+  // ==================== ОТПРАВКА СООБЩЕНИЯ ====================
   function sendMessage() {
     if (!isChatActive || isWaitingForVolunteer) return;
 
@@ -335,6 +386,7 @@
       timestamp: Date.now(),
     }).catch((err) => console.error('Send error:', err));
 
+    // СБРАСЫВАЕМ ТАЙМЕР ВОЛОНТЕРА И ЗАПУСКАЕМ ЗАНОВО (ОТВЕТ БУДЕТ БЫСТРЕЕ)
     if (mockVolunteerTimer) {
       stopMockVolunteer();
       addTypingIndicator();
@@ -348,6 +400,7 @@
     }
   }
 
+  // ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
   function handleKeyPress(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -367,25 +420,34 @@
     }
   }
 
-  panicBtn.addEventListener('click', panicDeleteSession);
-  sendBtn.addEventListener('click', sendMessage);
-  chatInput.addEventListener('keypress', handleKeyPress);
-  chatInput.addEventListener('input', autoResizeTextarea);
+  // ВОССТАНОВЛЕНИЕ ЗАГОЛОВКА ПРИ ФОКУСЕ НА ВКЛАДКУ
+  window.addEventListener('focus', resetTitleNotification);
+
+  // НАВЕШИВАЕМ ОБРАБОТЧИКИ
+  if (panicBtn) panicBtn.addEventListener('click', panicDeleteSession);
+  if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+  if (chatInput) {
+    chatInput.addEventListener('keypress', handleKeyPress);
+    chatInput.addEventListener('input', autoResizeTextarea);
+  }
   window.addEventListener('beforeunload', handleBeforeUnload);
 
+  // ЗАПУСКАЕМ ЧАТ
   initChat();
 })();
 
-// ========== ПЕРЕКЛЮЧЕНИЕ ТЕМЫ ДЛЯ СТРАНИЦЫ ЧАТА ==========
+// ==================== ПЕРЕКЛЮЧЕНИЕ ТЕМЫ ДЛЯ СТРАНИЦЫ ЧАТА ====================
 (function () {
   const themeToggle = document.getElementById('themeToggleChat');
   const themeIcon = themeToggle?.querySelector('.theme-icon');
   const themeText = themeToggle?.querySelector('.theme-text');
 
+  // ПОЛУЧАЕМ СОХРАНЕННУЮ ТЕМУ ИЗ LOCALSTORAGE
   function getSavedTheme() {
     return localStorage.getItem('theme') || 'light';
   }
 
+  // УСТАНАВЛИВАЕМ ТЕМУ (DARK ИЛИ LIGHT)
   function setTheme(theme) {
     document.body.classList.remove('light-theme', 'dark-theme');
     document.body.classList.add(`${theme}-theme`);
@@ -397,11 +459,12 @@
         themeText.textContent = 'Светлая';
       } else {
         themeIcon.textContent = '🌙';
-        themeText.textContent = 'Тёмная';
+        themeText.textContent = 'Темная';
       }
     }
   }
 
+  // ПЕРЕКЛЮЧАТЕЛЬ МЕЖДУ ТЕМАМИ
   function toggleTheme() {
     const currentTheme = document.body.classList.contains('dark-theme')
       ? 'dark'
@@ -417,36 +480,48 @@
   }
 })();
 
-// ========== ЖАЛОБА НА ВОЛОНТЕРА ==========
+// ==================== ЖАЛОБА НА ВОЛОНТЕРА (ИСПРАВЛЕННАЯ) ====================
 (function () {
   const complainBtn = document.getElementById('complainBtn');
 
-  function openComplainModal() {
-    console.log('openComplainModal called');
+  // ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ СИСТЕМНЫХ СООБЩЕНИЙ В ЖАЛОБЕ
+  function addSystemMessageForComplain(text, isError = false) {
+    const chatMessagesContainer = document.getElementById('chatMessages');
+    if (!chatMessagesContainer) return;
 
-    if (!window.isChatActive) {
-      const chatActiveFlag = document.querySelector('.user-message') !== null;
-      if (!chatActiveFlag) {
-        alert('Жалоба доступна только во время активного чата.');
-        return;
-      }
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message-system';
+    if (isError) {
+      msgDiv.style.background = 'rgba(156, 106, 106, 0.15)';
     }
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    msgDiv.innerHTML = `<span class="msg-icon">${isError ? '⚠️' : '📢'}</span><span>${text}</span><span class="msg-time">${timeStr}</span>`;
+    chatMessagesContainer.appendChild(msgDiv);
 
-    const modal = document.getElementById('complainModal');
-    if (!modal) {
-      console.error('Modal not found!');
+    setTimeout(() => {
+      msgDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 50);
+  }
+
+  function openComplainModal() {
+    const hasActiveChat = document.querySelector('.user-message') !== null;
+    if (!hasActiveChat) {
+      addSystemMessageForComplain(
+        'Жалоба доступна только во время активного чата.',
+        true,
+      );
       return;
     }
 
-    modal.classList.remove('hidden');
-    console.log('Modal opened');
+    const modal = document.getElementById('complainModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+    }
   }
 
   if (complainBtn) {
-    console.log('Complain button found');
     complainBtn.addEventListener('click', openComplainModal);
-  } else {
-    console.error('Complain button NOT found');
   }
 
   const closeComplainModal = document.getElementById('closeComplainModal');
@@ -483,10 +558,9 @@
 
     const details = complainDetails ? complainDetails.value.trim() : '';
 
-    const systemMsgDiv = document.createElement('div');
-    systemMsgDiv.className = 'message-system';
-    systemMsgDiv.innerHTML = `<span class="msg-icon">📢</span><span>Спасибо за жалобу. Мы рассмотрим её в течение 24 часов. Волонтёр не узнает о ней.</span><span class="msg-time">${new Date().toLocaleTimeString().slice(0, 5)}</span>`;
-    document.getElementById('chatMessages').appendChild(systemMsgDiv);
+    addSystemMessageForComplain(
+      'Спасибо за жалобу. Мы рассмотрим её в течение 24 часов. Волонтер не узнает о ней.',
+    );
 
     console.log('Complain submitted:', { reason, details });
 
@@ -499,4 +573,46 @@
     cancelComplainBtn.addEventListener('click', closeModal);
   if (submitComplainBtn)
     submitComplainBtn.addEventListener('click', submitComplain);
+})();
+
+// ==================== ПОДТВЕРЖДЕНИЕ ВЫХОДА ====================
+(function () {
+  const exitModal = document.getElementById('exitModal');
+  const exitCancelBtn = document.getElementById('exitCancelBtn');
+  const exitConfirmBtn = document.getElementById('exitConfirmBtn');
+  const backBtn = document.querySelector('.chat-back-btn');
+
+  function openExitModal() {
+    if (exitModal) exitModal.classList.remove('hidden');
+  }
+
+  function closeExitModal() {
+    if (exitModal) exitModal.classList.add('hidden');
+  }
+
+  function confirmExit() {
+    closeExitModal();
+    // ВЫЗЫВАЕМ ФУНКЦИЮ ЗАВЕРШЕНИЯ СЕССИИ (ОБЪЯВЛЕНА В ОСНОВНОМ БЛОКЕ)
+    if (typeof endSession === 'function') {
+      endSession(true);
+    } else {
+      window.location.href = 'index.html';
+    }
+  }
+
+  if (backBtn) {
+    backBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      // ПРОВЕРЯЕМ АКТИВЕН ЛИ ЧАТ (ЕСТЬ ЛИ СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЯ)
+      const hasMessages = document.querySelector('.user-message') !== null;
+      if (hasMessages) {
+        openExitModal();
+      } else {
+        window.location.href = 'index.html';
+      }
+    });
+  }
+
+  if (exitCancelBtn) exitCancelBtn.addEventListener('click', closeExitModal);
+  if (exitConfirmBtn) exitConfirmBtn.addEventListener('click', confirmExit);
 })();
