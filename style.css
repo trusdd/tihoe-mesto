@@ -1201,3 +1201,18 @@ body.dark-theme .theme-toggle:hover {
     transform: translateY(0);
   }
 }
+
+.secondary-badge {
+  margin-top: 0.5rem;
+  background: rgba(122, 143, 110, 0.08) !important;
+  border-color: rgba(122, 143, 110, 0.15) !important;
+}
+
+body.dark-theme .secondary-badge {
+  background: rgba(93, 122, 173, 0.08) !important;
+  border-color: rgba(93, 122, 173, 0.15) !important;
+}
+
+.hero-badge {
+  transition: all 0.2s ease;
+}
